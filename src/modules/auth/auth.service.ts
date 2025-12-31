@@ -16,6 +16,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  // Handles user login and token generation
   async login(user: User, response: Response) {
     const tokenPayload: TokenPayload = {
       sub: user._id.toHexString(),
@@ -23,28 +24,36 @@ export class AuthService {
       role: user.role,
     };
 
+    // Token expiration times
     const ACCESS_TOKEN_EXPIRE_SECONDS: number = 15 * 60; // 15 min
     const REFRESH_TOKEN_EXPIRE_SECONDS: number = 7 * 24 * 60 * 60; // 7 days
 
+    // Generate access token
     const accessToken = this.jwtService.sign(tokenPayload, {
       secret: this.configService.getOrThrow('JWT_ACCESS_SECRET'),
       expiresIn: ACCESS_TOKEN_EXPIRE_SECONDS,
     });
+
+    // Generate refresh token
     const refreshToken = this.jwtService.sign(tokenPayload, {
       secret: this.configService.getOrThrow('JWT_REFRESH_SECRET'),
       expiresIn: REFRESH_TOKEN_EXPIRE_SECONDS,
     });
 
+    // Hash and store refresh token in database
     await this.usersService.updateUser(
       { _id: user._id },
       { $set: { refreshToken: await hash(refreshToken, 10) } },
     );
 
+    // Send access token as httpOnly cookie
     response.cookie('Authentication', accessToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
       maxAge: ACCESS_TOKEN_EXPIRE_SECONDS * 1000,
     });
+
+    // Send refresh token as httpOnly cookie
     response.cookie('Refresh', refreshToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
@@ -52,15 +61,18 @@ export class AuthService {
     });
   }
 
+  // Register a new user
   async register(dto: CreateUserRequest) {
     await this.usersService.create(dto);
   }
 
+  // Verify user credentials
   async verifyUser(email: string, password: string) {
     try {
       const user = await this.usersService.getUser({
         email,
       });
+      // Compare provided password with stored hash
       const authenticated = await compare(password, user.passwordHash);
       if (!authenticated) {
         throw new UnauthorizedException();
@@ -71,10 +83,13 @@ export class AuthService {
     }
   }
 
+  // Verify refresh token
   async verifyUserRefreshToken(refreshToken: string, userId: string) {
     try {
       const user = await this.usersService.getUser({ _id: userId });
+      // Get stored refresh token
       const rToken = user.refreshToken !== undefined ? user.refreshToken : '';
+      // Compare refresh token with stored hash
       const authenticated = await compare(refreshToken, rToken);
       if (!authenticated) {
         throw new UnauthorizedException();

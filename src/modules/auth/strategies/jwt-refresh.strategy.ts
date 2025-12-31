@@ -22,10 +22,12 @@ export class JwtRefreshStrategy extends PassportStrategy(
         (request: Request) => request.cookies?.Refresh,
       ]),
       secretOrKey: configService.getOrThrow('JWT_REFRESH_SECRET'),
+      // Allows access to request object in validate method
       passReqToCallback: true,
     });
   }
 
+  // Validates refresh token and returns the related user
   async validate(
     request: Request,
     payload: RefreshTokenPayload,
@@ -36,6 +38,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
     if (!rToken) {
       throw new UnauthorizedException('Refresh token missing');
     }
+    // Verify that refresh token belongs to the user
     return this.authService.verifyUserRefreshToken(rToken, payload.sub);
   }
 }

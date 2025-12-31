@@ -7,10 +7,12 @@ import { AuthService } from '../auth.service';
 export class LocalStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly authService: AuthService) {
     super({
+      // Use email field as username
       usernameField: 'email',
     });
   }
 
+  // Validate user credentials using email and password
   async validate(email: string, password: string) {
     return this.authService.verifyUser(email, password);
   }

@@ -15,17 +15,20 @@ export class UsersService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
+  // Create a new user
   async create(data: CreateUserRequest) {
     const { email } = data;
     const existing = await this.userModel.findOne({ email: email });
     if (existing) throw new ConflictException('User already exists');
 
+    // Hash password and save user
     await new this.userModel({
       ...data,
       password: await hash(data.password, 10),
     }).save();
   }
 
+  // Get a single user by query
   async getUser(query: QueryFilter<User>) {
     const user = await this.userModel.findOne(query);
     if (!user) {
@@ -34,14 +37,12 @@ export class UsersService {
     return user;
   }
 
-  async getUsers() {
-    return this.userModel.find({});
-  }
-
+  // Update user data
   async updateUser(query: QueryFilter<User>, data: UpdateQuery<User>) {
     return this.userModel.findOneAndUpdate(query, data);
   }
 
+  // Return basic info of current user
   getMe(user: User) {
     return { email: user.email, role: user.role, createdAt: user.createdAt };
   }

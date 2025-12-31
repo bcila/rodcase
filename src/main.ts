@@ -6,13 +6,16 @@ import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Middleware to parse cookies
   app.use(cookieParser());
 
+  // Check upload directory, create if it doesn't exist
   const uploadDir = process.env.UPLOAD_DIR ?? '/uploads';
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
   }
-
+  // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('Media API')
     .setDescription('NestJS Media Library API')
