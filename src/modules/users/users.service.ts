@@ -41,4 +41,8 @@ export class UsersService {
   async updateUser(query: QueryFilter<User>, data: UpdateQuery<User>) {
     return this.userModel.findOneAndUpdate(query, data);
   }
+
+  getMe(user: User) {
+    return { email: user.email, role: user.role, createdAt: user.createdAt };
+  }
 }

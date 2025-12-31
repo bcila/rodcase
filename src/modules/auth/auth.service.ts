@@ -17,17 +17,22 @@ export class AuthService {
   ) {}
 
   async login(user: User, response: Response) {
-
     const tokenPayload: TokenPayload = {
-      userId: user._id.toHexString(),
+      sub: user._id.toHexString(),
+      email: user.email,
+      role: user.role,
     };
+
+    const ACCESS_TOKEN_EXPIRE_SECONDS: number = 15 * 60; // 15 min
+    const REFRESH_TOKEN_EXPIRE_SECONDS: number = 7 * 24 * 60 * 60; // 7 days
+
     const accessToken = this.jwtService.sign(tokenPayload, {
       secret: this.configService.getOrThrow('JWT_ACCESS_SECRET'),
-      expiresIn: '15m',
+      expiresIn: ACCESS_TOKEN_EXPIRE_SECONDS,
     });
     const refreshToken = this.jwtService.sign(tokenPayload, {
       secret: this.configService.getOrThrow('JWT_REFRESH_SECRET'),
-      expiresIn: '7d',
+      expiresIn: REFRESH_TOKEN_EXPIRE_SECONDS,
     });
 
     await this.usersService.updateUser(
@@ -38,10 +43,12 @@ export class AuthService {
     response.cookie('Authentication', accessToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
+      maxAge: ACCESS_TOKEN_EXPIRE_SECONDS * 1000,
     });
     response.cookie('Refresh', refreshToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
+      maxAge: REFRESH_TOKEN_EXPIRE_SECONDS * 1000,
     });
   }
 
@@ -59,21 +66,21 @@ export class AuthService {
         throw new UnauthorizedException();
       }
       return user;
-    } catch (err) {
+    } catch {
       throw new UnauthorizedException('Credentials are not valid.');
     }
   }
 
-  async veryifyUserRefreshToken(refreshToken: string, userId: string) {
+  async verifyUserRefreshToken(refreshToken: string, userId: string) {
     try {
       const user = await this.usersService.getUser({ _id: userId });
       const rToken = user.refreshToken !== undefined ? user.refreshToken : '';
-      const authenticated = compare(refreshToken, rToken);
+      const authenticated = await compare(refreshToken, rToken);
       if (!authenticated) {
         throw new UnauthorizedException();
       }
       return user;
-    } catch (err) {
+    } catch {
       throw new UnauthorizedException('Refresh token is not valid.');
     }
   }

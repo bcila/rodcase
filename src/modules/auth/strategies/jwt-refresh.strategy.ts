@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
-import { TokenPayload } from '../token-payload.interface';
+import { RefreshTokenPayload } from '../token-payload.interface';
 import { AuthService } from '../auth.service';
+import { User } from '../../users/schema/user.schema';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(
@@ -17,6 +18,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         (request: Request) => request.cookies?.Refresh,
       ]),
       secretOrKey: configService.getOrThrow('JWT_REFRESH_SECRET'),
@@ -24,10 +26,16 @@ export class JwtRefreshStrategy extends PassportStrategy(
     });
   }
 
-  async validate(request: Request, payload: TokenPayload) {
-    return this.authService.veryifyUserRefreshToken(
-      request.cookies?.Refresh,
-      payload.userId,
-    );
+  async validate(
+    request: Request,
+    payload: RefreshTokenPayload,
+  ): Promise<User> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const rToken = request.cookies?.Refresh;
+
+    if (!rToken) {
+      throw new UnauthorizedException('Refresh token missing');
+    }
+    return this.authService.verifyUserRefreshToken(rToken, payload.sub);
   }
 }

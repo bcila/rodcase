@@ -1,3 +1,9 @@
 export interface TokenPayload {
-  userId: string;
+  sub: string; // user id
+  email: string;
+  role: 'user' | 'admin';
+}
+
+export interface RefreshTokenPayload extends TokenPayload {
+  refreshToken: string;
 }
