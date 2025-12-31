@@ -50,7 +50,7 @@ npm run start:dev
 ```
 
 
-Dosya ve API yapısı
+Dosya yapısı
 -----------------
 - `src/modules/auth` — kimlik doğrulama mantığı, stratejiler ve guard'lar
 - `src/modules/users` — kullanıcı CRUD ve DTO'lar
