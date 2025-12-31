@@ -21,8 +21,6 @@ import {
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
   ApiOkResponse,
-  ApiForbiddenResponse,
-  ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import { Response } from 'express';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -81,12 +79,6 @@ export class MediaController {
   @ApiOkResponse({
     description: 'Media found',
   })
-  @ApiForbiddenResponse({
-    description: 'User does not have access to this media',
-  })
-  @ApiNotFoundResponse({
-    description: 'Media not found',
-  })
   get(@Param('id') id: string, @CurrentUser() user: User) {
     return this.mediaService.getMediaById(id, user);
   }
@@ -102,12 +94,6 @@ export class MediaController {
       'application/octet-stream': {},
     },
   })
-  @ApiForbiddenResponse({
-    description: 'No access to this media',
-  })
-  @ApiNotFoundResponse({
-    description: 'Media not found',
-  })
   async download(
     @Param('id') id: string,
     @CurrentUser() user: User,
@@ -122,12 +108,6 @@ export class MediaController {
   @ApiOkResponse({
     description: 'Media deleted successfully',
   })
-  @ApiForbiddenResponse({
-    description: 'Only owner can delete media',
-  })
-  @ApiNotFoundResponse({
-    description: 'Media not found',
-  })
   delete(@Param('id') id: string, @CurrentUser() user: User) {
     return this.mediaService.delete(id, user);
   }
@@ -136,9 +116,6 @@ export class MediaController {
   @ApiOperation({ summary: 'Get permissions by id' })
   @ApiOkResponse({
     description: 'Permissions list',
-  })
-  @ApiForbiddenResponse({
-    description: 'Only owner can view permissions',
   })
   getPermissions(@Param('id') id: string, @CurrentUser() user: User) {
     return this.mediaService.getPermissions(id, user);
@@ -150,12 +127,6 @@ export class MediaController {
   @ApiBody({ type: UpdatePermissionsDto })
   @ApiOkResponse({
     description: 'Permissions updated successfully',
-  })
-  @ApiForbiddenResponse({
-    description: 'Only owner can update permissions',
-  })
-  @ApiBadRequestResponse({
-    description: 'Invalid action or userId',
   })
   @Post(':id/permissions')
   updatePermissions(
